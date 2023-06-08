@@ -1,0 +1,16 @@
+tensorflow>=2.6.0
+protobuf==3.20.1
+retina-face
+opencv-python-headless
+streamlit
+pyopengl
+pyvirtualdisplay==2.2
+Pillow
+boto3
+numpy
+os-sys
+requires.io
+PyQt5
+DateTime
+python-time
+multiprocess
