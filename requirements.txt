@@ -1,9 +1,8 @@
-streamlit==1.10.0
-tensorflow==2.1.0
-protobuf
+streamlit==1.23.1
+tensorflow>=1.6.0
+protobuf>=3.20, <5
 retina-face
-retinaface
-opencv-python
+opencv-python>=3.4.0.12
 pyopengl
 pyvirtualdisplay==2.2
 Pillow
