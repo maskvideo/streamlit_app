@@ -8,7 +8,7 @@ pyopengl
 pyvirtualdisplay==2.2
 Pillow
 boto3
-numpy~=1.19.2
+numpy>=1.22
 six~=1.15.0
 requires.io
 PyQt5
