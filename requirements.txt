@@ -1,7 +1,8 @@
 tensorflow
 protobuf
 retina-face
-opencv-python-headless
+retinaface
+opencv-python
 streamlit
 pyopengl
 pyvirtualdisplay==2.2
