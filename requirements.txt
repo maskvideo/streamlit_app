@@ -1,5 +1,5 @@
-streamlit==0.75.0
-tensorflow
+streamlit==1.10.0
+tensorflow==2.1.0
 protobuf
 retina-face
 retinaface
