@@ -1,9 +1,9 @@
+streamlit==0.75.0
 tensorflow
 protobuf
 retina-face
 retinaface
 opencv-python
-streamlit
 pyopengl
 pyvirtualdisplay==2.2
 Pillow
