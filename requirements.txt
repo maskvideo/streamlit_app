@@ -1,5 +1,5 @@
-tensorflow>=2.6.0
-protobuf==3.20.1
+tensorflow
+protobuf
 retina-face
 opencv-python-headless
 streamlit
@@ -8,7 +8,6 @@ pyvirtualdisplay==2.2
 Pillow
 boto3
 numpy
-os-sys
 requires.io
 PyQt5
 DateTime

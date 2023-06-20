@@ -66,23 +66,22 @@ if slider_value is not None:
 #upload video to the s3 bucket
 uploaded_file = st.file_uploader("Choose a video file", type=["mp4"])
 print(uploaded_file)
-
 # S3 upload logic
 if uploaded_file is not None:
     s3 = boto3.client('s3', aws_access_key_id=aws_client.aws_access_key_id, aws_secret_access_key=aws_client.aws_secret_access_key)
     with st.spinner('Uploading...'):
-        s3.upload_fileobj(uploaded_file, aws_client.BUCKET_NAME, uploaded_file.name)
-        # Get the name of the uploaded video
         video_name = uploaded_file.name
+        s3.upload_fileobj(uploaded_file, aws_client.BUCKET_NAME, video_name)
+        # Get the name of the uploaded video
     st.write('Upload successful!')
 
 # Create a button to start processing the video
 # TODO: need to find a way to make this faster
-# if st.button("Process video"):
-#     with st.spinner("Extracting frames from video..."):
-#         extract_frames.extract_frames_from_video(aws_client.get_video_url(video_name))
+if st.button("Process video"):
+    with st.spinner("Extracting frames from video..."):
+        extract_frames.extract_frames_from_video(aws_client.get_video_url(video_name))
 
-    # groups = [frames_files[i:i + 100] for i in range(0, len(frames_files), 100)]
+    groups = [frames_files[i:i + 100] for i in range(0, len(frames_files), 100)]
 
 # TODO: convert this to work with s3
 if st.button("Mask video"):
@@ -101,7 +100,7 @@ if st.button("Mask video"):
 
     
     # Create a unique filename for the masked video
-    masked_video_filename = "masked_" + uploaded_file.name
+    masked_video_filename = "masked_" + video_name
 
     # Define the video codec and output parameters
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
