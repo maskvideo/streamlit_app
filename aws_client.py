@@ -1,11 +1,9 @@
 import io
-import os
 import boto3
 import cv2
 import numpy as np
 import retina
 
-from PIL import Image
 BUCKET_NAME = 'face.mask' # replace with your bucket name
 KEY = 'people.jpg' # replace with your object key
 
@@ -52,8 +50,28 @@ def get_video_url(file_name):
     )
     return url
 
+def delete_objects(prefix):
+    bucket_name = BUCKET_NAME
+    s3 = s3_client
+    response = s3.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
 
+    if 'Contents' in response:
+        objects = [{'Key': obj['Key']} for obj in response['Contents']]
+        response = s3.delete_objects(
+            Bucket=bucket_name,
+            Delete={'Objects': objects}
+        )
+        print(f"Deleted {len(response['Deleted'])} objects from {bucket_name}/{prefix}")
 
+    if 'CommonPrefixes' in response:
+        for obj in response['CommonPrefixes']:
+            delete_objects(bucket_name, obj['Prefix'])
+
+def delete_file(file_key):
+    s3 = s3_client
+    bucket_name = BUCKET_NAME
+    s3.delete_object(Bucket=bucket_name, Key=file_key)
+    print(f"Deleted {file_key} from {bucket_name}")
 
 def test_run():
     img = cv2.imdecode(np.frombuffer(image_from_s3(BUCKET_NAME, KEY), np.uint8), cv2.IMREAD_COLOR)
@@ -62,4 +80,3 @@ def test_run():
     masked = retina.update_parameters(img, (20,20), 10, locations)
 
     upload_image_to_s3(masked)
-

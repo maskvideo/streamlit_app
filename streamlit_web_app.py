@@ -5,6 +5,9 @@ import extract_frames
 import cv2
 import numpy as np
 import aws_client
+import PIL.Image
+import io
+
 
 global kernel_size
 global epsilon
@@ -77,43 +80,56 @@ if uploaded_file is not None:
 
 # Create a button to start processing the video
 # TODO: need to find a way to make this faster
-if st.button("Process video"):
+if st.button("Process video") and uploaded_file is not None:
     with st.spinner("Extracting frames from video..."):
         extract_frames.extract_frames_from_video(aws_client.get_video_url(video_name))
 
     groups = [frames_files[i:i + 100] for i in range(0, len(frames_files), 100)]
+    aws_client.delete_file(video_name)
 
 # TODO: convert this to work with s3
 if st.button("Mask video"):
-    frames_files = extract_frames.sorted_frames_files(aws_client.BUCKET_NAME, "unmasked_frames/")
-    st.write("start mask")
-    masked_frames = []
-    for frame in frames_files:
-        print(frame)
-        frame_obj = aws_client.s3_client.get_object(Bucket=aws_client.BUCKET_NAME, Key=frame)
-        frame_bytes = frame_obj['Body'].read()
+    with st.spinner("Masking video: "):
+        frames_files = extract_frames.sorted_frames_files(aws_client.BUCKET_NAME, "unmasked_frames/")
+        st.write("start mask")
+        masked_frames = []
+        for frame in frames_files:
+            print(frame)
+            frame_obj = aws_client.s3_client.get_object(Bucket=aws_client.BUCKET_NAME, Key=frame)
+            frame_bytes = frame_obj['Body'].read()
 
-        unmasked_pil_img = cv2.imdecode(np.frombuffer(frame_bytes, np.uint8), cv2.IMREAD_COLOR)
-        faces_locations = retina.all_faces_locations(unmasked_pil_img)
-        masked_frames.append(retina.update_parameters(unmasked_pil_img, (kernel_size, kernel_size), epsilon, faces_locations))
-    st.write("end mask")
+            unmasked_pil_img = PIL.Image.open(io.BytesIO(frame_bytes)).convert("RGB")
+            unmasked_np_img = np.array(unmasked_pil_img)
+            faces_locations = retina.all_faces_locations(unmasked_np_img)
+            masked_frame = retina.update_parameters(unmasked_np_img, (kernel_size, kernel_size), epsilon, faces_locations)
+            masked_frames.append(masked_frame)      
+        st.write("end mask")
+        # Check if any masked frames are available
+        if masked_frames:
+            # Convert the PIL Image objects to NumPy arrays
+            masked_frames = [np.array(frame) for frame in masked_frames]
+            # Create a file uploader widget to allow the user to choose the file path for the masked video
+            masked_video_filepath = st.text_input("Enter a file path for the masked video", value="masked_video.mp4")
 
-    
-    # Create a unique filename for the masked video
-    masked_video_filename = "masked_" + video_name
+            # Define the video codec and output parameters
+            fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+            fps = 30.0  # Frames per second
+            frame_size = (masked_frames[0].shape[1], masked_frames[0].shape[0])
 
-    # Define the video codec and output parameters
-    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-    fps = 30.0  # Frames per second
-    frame_size = (masked_frames[0].shape[1], masked_frames[0].shape[0])
-    video_writer = cv2.VideoWriter(masked_video_filename, fourcc, fps, frame_size)
+            # Create the video writer
+            video_writer = cv2.VideoWriter(masked_video_filepath, fourcc, fps, frame_size)
 
-    # Write the masked frames to the video file
-    for frame in masked_frames:
-        video_writer.write(frame)
+            # Write the masked frames to the video file
+            for frame in masked_frames:
+                frame_np = np.array(frame)
+                video_writer.write(frame_np)
 
-    # Release the video writer
-    video_writer.release()
+            # Release the video writer
+            video_writer.release()
 
-    # Create a download link for the masked video
-    st.markdown(f'<a href="{masked_video_filename}" download>Download Masked Video</a>', unsafe_allow_html=True)
+            if st.button("Download Masked Video"):
+                st.markdown(f'<a href="file://{masked_video_filepath}" download>Click here to download</a>', unsafe_allow_html=True)
+                prefix = 'unmasked_frames/'
+                aws_client.delete_objects(prefix)
+            else:
+                st.warning("No masked frames found. Please ensure you have clicked the 'Mask video' button.")

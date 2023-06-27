@@ -14,3 +14,5 @@ PyQt5
 DateTime
 python-time
 multiprocess
+regex
+natsort

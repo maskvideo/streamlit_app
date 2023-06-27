@@ -7,6 +7,8 @@ import sys
 import time
 import multiprocessing
 import aws_client
+import regex as re
+import natsort
 
 UNMASKED_FRAMES_DIR = "frames_from_video"
 SAVING_FRAMES_PER_SECOND = 30
@@ -80,17 +82,24 @@ def extract_frames_from_video(video_url):
         # increment the frame count
         count += 1
 
+def frame_sort_key(frame):
+    match = re.match(r"frame0-(\d+)-(\d+)\.(\d+).jpg", frame)
+    if match:
+        hour = match.group(1).zfill(2)
+        minute = match.group(2).zfill(2)
+        second = match.group(3).zfill(3)
+        return hour, minute, second
+    return frame
 
 def sorted_frames_files(bucket_name, prefix):
     s3 = aws_client.s3_client
     response = s3.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
-
     files = []
     for obj in response['Contents']:
         if obj['Key'].endswith('.jpg'):
             files.append(obj['Key'])
-
-    return sorted(files)
+    sorted_files = natsort.natsorted(files, key=frame_sort_key)
+    return sorted_files
 
 
 def masked_frame_group(frames_files, kernel, epsilon):
@@ -119,15 +128,5 @@ def main():
     end = time.time()
     print((end - start) / 60)
 
-
-
-
-
-
-
 if __name__ == "__main__":
     main()
-
-
-
-
